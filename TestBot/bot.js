@@ -4,6 +4,7 @@ import * as choochoo from "./commands/choochoo.js";
 import * as play_music from "./commands/play_music.js";
 import * as pause_music from "./commands/pause_music.js";
 import * as resume_music from "./commands/resume_music.js";
+import * as skip_music from "./commands/skip_music.js";
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, NoSubscriberBehavior } from "@discordjs/voice";
 
 // puts all contents from .env into variable process which can be indexed
@@ -12,6 +13,9 @@ config();
 
 // queue for the songs to play 
 let queue = [];
+
+let play_first = 0;
+let connection = null;
 
 // base property is intents, which is an array of GatewayIntentBits
 const client = new Client({
@@ -55,7 +59,7 @@ async function handleInteraction(interaction) {
             const channel = member.voice.channel;
             console.log(`User is in voice channel: ${channel.name}`);
             
-            const connection = joinVoiceChannel({
+            connection = joinVoiceChannel({
                 channelId: channel.id,
                 guildId: channel.guild.id,
                 adapterCreator: channel.guild.voiceAdapterCreator,
@@ -63,6 +67,13 @@ async function handleInteraction(interaction) {
 
             await play_music.execute(interaction, connection, player, queue);
 
+            if (player.state.status === AudioPlayerStatus.Idle && queue.length > 0) {
+                console.log('Player is idle and queue has songs to play. Playing the first song in the queue.');
+                player.play(queue.shift());
+            }
+
+            connection.subscribe(player);
+            
         } else {
             console.log('User is not in a voice channel');
             await interaction.reply({ content: `Please join a voice channel first`, ephemeral: true });
@@ -73,24 +84,34 @@ async function handleInteraction(interaction) {
     else if( commandName === 'resume_music'){
         await resume_music.execute(interaction, player);
     }
+    else if( commandName === 'skip_music'){
+        await skip_music.execute(interaction, player, queue);
+    }
 }
 
-player.on(AudioPlayerStatus.Playing, () => {
-	console.log('The audio player has started playing!');
-});
+// player.on(AudioPlayerStatus.Playing, () => {
+// 	console.log('The audio player has started playing!');
+// });
 
-player.on(AudioPlayerStatus.Idle, () => {
+// player.on(AudioPlayerStatus.Idle, () => {
 
-    console.log('Going to play the next song in the queue.');
-    // if(queue.length > 0){
-    //     console.log('Going to play the next song in the queue.');
-    //     player.play(queue.shift());
-    //     connection.subscribe(player);
-    // }
+//     console.log('Going to play the next song in the queue.');
+
+//     if(queue.length > 0){
+//         console.log('Going to play the next song in the queue.');
+//         player.play(queue.shift());
+//         connection.subscribe(player);
+//     }
     
+// });
+
+player.on('stateChange', (oldState, newState) => {
+    if (newState.status === AudioPlayerStatus.Idle && queue.length > 0) {
+        console.log('Going to play the next song in the queue.');
+        player.play(queue.shift());
+        connection.subscribe(player);
+    }
 });
-
-
 
 // event handler for when the bot is ready at the beginning
 client.once(Events.ClientReady, readyDiscord);

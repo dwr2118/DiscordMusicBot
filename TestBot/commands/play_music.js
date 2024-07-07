@@ -34,7 +34,7 @@ export async function execute(interaction, connection, player, queue) {
     let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${request}&key=${process.env.YTAPIKEY}`;
     let response = await fetch(url);
     let json = await response.json();
-    console.log(json.items);
+    // console.log(json.items);
 
     let videoId = json.items[0].id.videoId;
     let videoTitles = json.items[0].snippet.title;
@@ -62,6 +62,30 @@ export async function execute(interaction, connection, player, queue) {
 
     // define the audio resource from the youtube searches 
     // const resource = createAudioResource('./assets/kevgenix.mp3');
-    player.play(resource);
-    connection.subscribe(player);
+    // player.play(resource);
+    // connection.subscribe(player);
 }
+
+
+
+
+            // if (play_first === 0){
+            //     player.play(queue.shift());
+            //     connection.subscribe(player);
+            //     play_first = 1;
+            // }
+            
+
+            // player.on(AudioPlayerStatus.Playing, () => {
+            //     console.log("Wait for the current song to end!");
+            // });
+
+            // player.on(AudioPlayerStatus.Idle, () => {
+            //     console.log('Player has gone idle! Potentially going to play next song in queue.');
+
+            //     if(queue.length > 0){
+            //         player.play(queue.shift());
+            //         connection.subscribe(player);
+            //     }
+
+            // });
